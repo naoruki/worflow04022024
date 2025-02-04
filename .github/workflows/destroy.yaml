@@ -1,5 +1,5 @@
 name: Terraform Destroy
-
+run-name: ${{ github.actor }} destroy
 on:
   workflow_dispatch:  # Manually triggered workflow
 
