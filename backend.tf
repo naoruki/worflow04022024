@@ -3,8 +3,8 @@ provider "aws" {
 }
 terraform {
   backend "s3" {
-    bucket = "cornelia-test"
+    bucket = "sctp-ce8-tfstate"
     region = "ap-southeast-1"
-    key = "cornelia-key-pair" # must be different from other projects
+    key = "cornelia-activity.tfstate" # must be different from other projects
   }
 }
