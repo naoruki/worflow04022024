@@ -1,5 +1,5 @@
 name: Terraform Destroy
-run-name: ${{ github.actor }} destroy
+
 on:
   workflow_dispatch:  # Manually triggered workflow
 
@@ -27,8 +27,20 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Initialize Terraform
-      run: terraform init
+    - name: Initialize Terraform with S3 Backend
+      run: terraform init -reconfigure
 
-    - name: Destroy Infrastructure
+    - name: Verify Terraform State
+      run: terraform state list || echo "No resources found in state"
+
+    - name: Check Terraform State File in S3
+      run: aws s3 ls s3://$S3_BUCKET/$TF_STATE_KEY --region $AWS_REGION || echo "State file not found"
+
+    - name: Refresh Terraform State
+      run: terraform refresh || echo "Refresh failed"
+
+    - name: Plan Terraform Destroy (Debugging Step)
+      run: terraform plan -destroy
+
+    - name: Destroy Infrastructure (Manual Confirmation)
       run: terraform destroy
