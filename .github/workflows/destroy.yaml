@@ -5,7 +5,7 @@ on:
 
 env:            
   AWS_REGION: ap-southeast-1  
-  S3_BUCKET: sctp-ce8-tfstate
+  BUCKET: sctp-ce8-tfstate
   KEY: cornelia-activity.tfstate
 
 jobs:
