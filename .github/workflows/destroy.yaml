@@ -5,6 +5,8 @@ on:
 
 env:            
   AWS_REGION: ap-southeast-1  
+  S3_BUCKET: sctp-ce8-tfstate
+  TF_STATE_KEY: cornelia-activity.tfstate
 
 jobs:
   terraform-destroy:
