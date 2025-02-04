@@ -1,12 +1,12 @@
 name: Terraform Destroy
-run-name: ${{ github.actor }} destroy
+
 on:
   workflow_dispatch:  # Manually triggered workflow
 
 env:            
   AWS_REGION: ap-southeast-1  
-  BUCKET: sctp-ce8-tfstate
-  KEY: cornelia-activity.tfstate
+  S3_BUCKET: sctp-ce8-tfstate
+  TF_STATE_KEY: cornelia-activity.tfstate
 
 jobs:
   terraform-destroy:
@@ -27,8 +27,11 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Initialize Terraform
-      run: terraform init
+    - name: Initialize Terraform with S3 Backend
+      run: terraform init -reconfigure
 
-    - name: Destroy Infrastructure
+    - name: Destroy Infrastructure (Manual Confirmation)
       run: terraform destroy
+
+    - name: Delete Terraform State File from S3
+      run: aws s3 rm s3://$S3_BUCKET/$TF_STATE_KEY --region $AWS_REGION
