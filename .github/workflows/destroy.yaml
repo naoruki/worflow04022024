@@ -5,8 +5,7 @@ on:
 
 env:            
   AWS_REGION: ap-southeast-1  
-  S3_BUCKET: sctp-ce8-tfstate
-  TF_STATE_KEY: cornelia-activity.tfstate
+  S3_BUCKET: cornelia-s3-bucket
 
 jobs:
   terraform-destroy:
@@ -16,7 +15,7 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
-   
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -34,4 +33,4 @@ jobs:
       run: terraform destroy
 
     - name: Delete Terraform State File from S3
-      run: aws s3 rm s3://$S3_BUCKET/$TF_STATE_KEY --region $AWS_REGION
+      run: terraform destroy -target=aws_s3_bucket.my_bucket -auto-approve
