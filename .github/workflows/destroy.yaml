@@ -29,8 +29,5 @@ jobs:
     - name: Initialize Terraform with S3 Backend
       run: terraform init -reconfigure
 
-    - name: Destroy Infrastructure (Manual Confirmation)
-      run: terraform destroy
-
     - name: Delete Terraform State File from S3
       run: terraform destroy -target=aws_s3_bucket.my_bucket -auto-approve
