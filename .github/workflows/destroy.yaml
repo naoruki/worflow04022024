@@ -1,21 +1,21 @@
 name: Terraform Destroy
 
 on:
-  workflow_dispatch:  # Manually triggered workflow
+  workflow_dispatch:
 
-env:            
+env:
   AWS_REGION: ap-southeast-1  
-  S3_BUCKET: cornelia-s3-bucket  # Targeting the specific S3 bucket
+  S3_BUCKET: cornelia-s3-bucket  
 
 jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
-    environment: destroy  # Requires manual approval in GitHub Environments
+    environment: destroy
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
-   
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -26,8 +26,11 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Initialize Terraform with S3 Backend
+    - name: Initialize Terraform
       run: terraform init -reconfigure
+
+    - name: Empty S3 Bucket Before Destroying
+      run: aws s3 rm s3://$S3_BUCKET --recursive --region $AWS_REGION || true
 
     - name: Destroy Only S3 Bucket Resource
       run: terraform destroy -target=aws_s3_bucket.my_bucket -auto-approve
