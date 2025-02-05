@@ -1,21 +1,21 @@
 name: Terraform Destroy S3 Bucket
 
 on:
-  workflow_dispatch:  # Manually triggered workflow
+  workflow_dispatch:
 
-env:            
+env:
   AWS_REGION: ap-southeast-1  
   S3_BUCKET: cornelia-s3-bucket  
 
 jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
-    environment: destroy  # Requires manual approval in GitHub Environments
+    environment: destroy
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
-   
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -29,12 +29,12 @@ jobs:
     - name: Initialize Terraform
       run: terraform init -reconfigure
 
+    - name: Import S3 Bucket to Terraform (If Not Tracked)
+      run: terraform import aws_s3_bucket.my_bucket $S3_BUCKET || true
+
     - name: Empty S3 Bucket (Including Versioned Objects)
       run: |
-        # Delete all non-versioned objects
         aws s3 rm s3://$S3_BUCKET --recursive --region $AWS_REGION || true
-
-        # Delete all versioned objects (if versioning is enabled)
         versions=$(aws s3api list-object-versions --bucket $S3_BUCKET --query 'Versions[].{Key:Key,VersionId:VersionId}' --output json --region $AWS_REGION)
         markers=$(aws s3api list-object-versions --bucket $S3_BUCKET --query 'DeleteMarkers[].{Key:Key,VersionId:VersionId}' --output json --region $AWS_REGION)
 
