@@ -1,21 +1,21 @@
-name: Terraform Destroy
+name: Terraform Destroy S3 Bucket
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manually triggered workflow
 
-env:
+env:            
   AWS_REGION: ap-southeast-1  
   S3_BUCKET: cornelia-s3-bucket  
 
 jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
-    environment: destroy
+    environment: destroy  # Requires manual approval in GitHub Environments
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
-
+   
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -29,8 +29,29 @@ jobs:
     - name: Initialize Terraform
       run: terraform init -reconfigure
 
-    - name: Empty S3 Bucket Before Destroying
-      run: aws s3 rm s3://$S3_BUCKET --recursive --region $AWS_REGION || true
+    - name: Empty S3 Bucket (Including Versioned Objects)
+      run: |
+        # Delete all non-versioned objects
+        aws s3 rm s3://$S3_BUCKET --recursive --region $AWS_REGION || true
+
+        # Delete all versioned objects (if versioning is enabled)
+        versions=$(aws s3api list-object-versions --bucket $S3_BUCKET --query 'Versions[].{Key:Key,VersionId:VersionId}' --output json --region $AWS_REGION)
+        markers=$(aws s3api list-object-versions --bucket $S3_BUCKET --query 'DeleteMarkers[].{Key:Key,VersionId:VersionId}' --output json --region $AWS_REGION)
+
+        echo $versions | jq -c '.[]' | while read i; do
+          key=$(echo $i | jq -r '.Key')
+          version_id=$(echo $i | jq -r '.VersionId')
+          aws s3api delete-object --bucket $S3_BUCKET --key "$key" --version-id "$version_id" --region $AWS_REGION
+        done
+
+        echo $markers | jq -c '.[]' | while read i; do
+          key=$(echo $i | jq -r '.Key')
+          version_id=$(echo $i | jq -r '.VersionId')
+          aws s3api delete-object --bucket $S3_BUCKET --key "$key" --version-id "$version_id" --region $AWS_REGION
+        done
 
     - name: Destroy Only S3 Bucket Resource
-      run: terraform destroy -target=aws_s3_bucket.my_bucket -auto-approve
+      run: terraform destroy -target=aws_s3_bucket.my_bucket -auto-approve || true
+
+    - name: Delete S3 Bucket (If Terraform Fails)
+      run: aws s3api delete-bucket --bucket $S3_BUCKET --region $AWS_REGION || true
